@@ -172,7 +172,7 @@ const FrontendApp: React.FC<FrontendAppProps> = ({ onLogout, onGoToAdmin }) => {
 
   const todayOrderCategories = Array.from(new Set(todayOrders.map(o => o.categoryLabel || '未分類')));
   const filteredTodayOrders = todayOrders.filter(o => todayOrderFilter === 'ALL' || (o.categoryLabel || '未分類') === todayOrderFilter);
-  const isWeeklyViewType = activeLabel === '訂餐' || activeLabel === '訂飲料';
+  const isWeeklyViewType = activeLabel === '訂餐' || activeLabel === '訂飲料' || activeLabel === '美味便當' || activeLabel === '清涼飲料';
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">

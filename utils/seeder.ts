@@ -1,7 +1,6 @@
 import { db } from '../services/storage';
 import { MenuCategory, Employee, Announcement } from '../types';
-import { db as firestoreDb } from '../services/firebase'; // Keep for direct access if needed, though db service wraps it.
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+
 
 // Mock Data Configuration
 const INITIAL_MENUS: MenuCategory[] = [
@@ -42,7 +41,7 @@ const INITIAL_MENUS: MenuCategory[] = [
     },
     {
         id: 'MENU_003',
-        label: '下午茶',
+        label: '揪團購',
         config: {
             imageUrl: 'https://images.unsplash.com/photo-1511920170033-f8396924c348?w=800&auto=format&fit=crop&q=60',
             shopName: '星巴克咖啡',
