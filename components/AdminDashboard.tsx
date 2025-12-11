@@ -425,6 +425,20 @@ const SystemManager = ({ settings, onBind, currentUser }: any) => {
   const canEdit = (target: AdminAccount) => { if (currentUser.isSuperAdmin) return true; if (target.id === currentUser.id) return true; return false; };
   const canDelete = (target: AdminAccount) => { if (target.isSuperAdmin) return false; if (currentUser.isSuperAdmin) return true; return false; };
 
+  const handleSensitiveAction = async (action: () => Promise<void>) => {
+    if (!currentUser.isSuperAdmin) {
+      alert('此功能僅限最高管理員使用！');
+      return;
+    }
+    const pwd = prompt('請輸入最高管理員密碼以確認執行：');
+    if (pwd === null) return; // Cancelled
+    if (pwd !== currentUser.password) {
+      alert('密碼錯誤，拒絕執行！');
+      return;
+    }
+    await action();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-slate-800">系統管理</h2></div>
@@ -440,16 +454,67 @@ const SystemManager = ({ settings, onBind, currentUser }: any) => {
       )}
       {activeTab === 'INFO' && (
         <div className="grid grid-cols-1 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Database className="text-indigo-600" /> 資料庫連線監控</h3><div className="flex flex-col md:flex-row gap-6"><div className="flex-1 space-y-4"><div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"><span className="font-bold text-slate-700">Google 帳號綁定</span>{settings.isGoogleBound ? (<div className="flex items-center gap-2">{settings.googleAccountType === 'WORKSPACE' ? (<span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">Google Workspace</span>) : (<span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">Personal</span>)}<span className="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full"><Link size={14} /> 已連結</span></div>) : (<span className="flex items-center gap-1 text-red-500 font-bold bg-red-50 px-3 py-1 rounded-full"><Link2Off size={14} /> 未連結</span>)}</div>{settings.isGoogleBound && (<div className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-100 shadow-sm"><span className="font-bold text-slate-700">綁定帳號</span><div className="flex items-center gap-2">{settings.googleAccountType === 'WORKSPACE' ? (<div className="bg-indigo-600 p-1 rounded-full text-white"><Briefcase size={14} /></div>) : (<div className="bg-white p-1 rounded-full shadow-sm"><GoogleIcon /></div>)}<span className="font-mono font-bold text-slate-800">{settings.googleAccountName}</span></div></div>)}<div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"><span className="font-bold text-slate-700">連線狀態</span>{dbStatus === 'IDLE' && <span className="text-slate-400 font-bold text-sm">尚未檢查</span>}{dbStatus === 'CHECKING' && <span className="text-blue-500 font-bold text-sm animate-pulse">檢查中...</span>}{dbStatus === 'SUCCESS' && <span className="text-emerald-600 font-bold text-sm flex items-center gap-1"><CheckCircle size={14} /> 連線正常</span>}{dbStatus === 'ERROR' && <span className="text-red-500 font-bold text-sm flex items-center gap-1"><XCircle size={14} /> 連線失敗</span>}</div>{lastDbCheck && (<div className="text-xs text-slate-400 text-right">上次檢查: {lastDbCheck.toLocaleTimeString()}</div>)}</div><div className="flex flex-col gap-2 justify-center border-l pl-6 border-slate-100"><button onClick={handleCheckConnection} disabled={dbStatus === 'CHECKING'} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:bg-indigo-300"><RefreshCw size={18} className={dbStatus === 'CHECKING' ? 'animate-spin' : ''} /> 測試連線</button>{!settings.isGoogleBound && (<button onClick={() => { setTimeout(() => { onBind('admin@yj-tech.com', 'WORKSPACE'); }, 1000); }} className="text-sm text-slate-500 underline hover:text-primary">前往綁定 Google 帳號</button>)}</div></div></div>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Database className="text-indigo-600" /> 資料庫連線監控</h3>
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-100 shadow-sm">
+                  <span className="font-bold text-slate-700">資料庫模式</span>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-orange-500 p-1 rounded-full text-white"><Database size={14} /></div>
+                    <span className="font-mono font-bold text-slate-800">Google Firestore</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="font-bold text-slate-700">連線狀態</span>
+                  {dbStatus === 'IDLE' && <span className="text-slate-400 font-bold text-sm">尚未檢查</span>}
+                  {dbStatus === 'CHECKING' && <span className="text-blue-500 font-bold text-sm animate-pulse">檢查中...</span>}
+                  {dbStatus === 'SUCCESS' && <span className="text-emerald-600 font-bold text-sm flex items-center gap-1"><CheckCircle size={14} /> 連線正常</span>}
+                  {dbStatus === 'ERROR' && <span className="text-red-500 font-bold text-sm flex items-center gap-1"><XCircle size={14} /> 連線失敗</span>}
+                </div>
+                {lastDbCheck && (<div className="text-xs text-slate-400 text-right">上次檢查: {lastDbCheck.toLocaleTimeString()}</div>)}
+              </div>
+              <div className="flex flex-col gap-2 justify-center border-l pl-6 border-slate-100">
+                <button onClick={handleCheckConnection} disabled={dbStatus === 'CHECKING'} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:bg-indigo-300">
+                  <RefreshCw size={18} className={dbStatus === 'CHECKING' ? 'animate-spin' : ''} /> 測試連線
+                </button>
+              </div>
+            </div>
+          </div>
 
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Database className="text-indigo-600" /> 資料庫標準範例初始化</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 mb-1 font-bold">一鍵建立完整範例</p>
-                <p className="text-xs text-slate-400">若資料庫為空，此功能將自動建立：3組菜單、5位員工、3則公告。</p>
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Database className="text-indigo-600" /> 資料庫維護工具</h3>
+
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+                <div>
+                  <p className="text-slate-600 mb-1 font-bold">建立標準範例資料</p>
+                  <p className="text-xs text-slate-400">若資料庫為空，此功能將自動建立：3組菜單、5位員工、3則公告。</p>
+                </div>
+                <button
+                  onClick={() => handleSensitiveAction(seedDatabase)}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg font-bold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md flex items-center gap-2"
+                >
+                  <Database size={16} /> 建立標準範例資料
+                </button>
               </div>
-              <button onClick={seedDatabase} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-lg font-bold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md flex items-center gap-2"><Database size={16} /> 建立標準範例資料</button>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-red-600 mb-1 font-bold">一鍵清除資料庫</p>
+                  <p className="text-xs text-slate-400">注意！此操作將永久刪除所有訂單、菜單、員工與公告資料。</p>
+                </div>
+                <button
+                  onClick={() => handleSensitiveAction(async () => {
+                    await db.clearAllData();
+                    alert('資料庫已清空！');
+                    window.location.reload();
+                  })}
+                  className="bg-white border-2 border-red-100 text-red-500 px-6 py-2 rounded-lg font-bold hover:bg-red-50 hover:border-red-200 transition-all flex items-center gap-2"
+                >
+                  <Trash2 size={16} /> 一鍵清除資料庫
+                </button>
+              </div>
             </div>
           </div>
         </div>

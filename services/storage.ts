@@ -429,6 +429,34 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.FRONTEND_PASSWORD, password);
   }
 
+  // --- Database Management ---
+  async clearAllData(): Promise<void> {
+    if (this.useCloud) {
+      // Clear Orders
+      const orders = await getDocs(collection(firestoreDb, 'orders'));
+      for (const d of orders.docs) await deleteDoc(doc(firestoreDb, 'orders', d.id));
+
+      // Clear Menus
+      const menus = await getDocs(collection(firestoreDb, 'menus'));
+      for (const d of menus.docs) await deleteDoc(doc(firestoreDb, 'menus', d.id));
+
+      // Clear Employees
+      const employees = await getDocs(collection(firestoreDb, 'employees'));
+      for (const d of employees.docs) await deleteDoc(doc(firestoreDb, 'employees', d.id));
+
+      // Clear Announcements
+      const announcements = await getDocs(collection(firestoreDb, 'announcements'));
+      for (const d of announcements.docs) await deleteDoc(doc(firestoreDb, 'announcements', d.id));
+
+      return;
+    }
+    // Local storage clear
+    localStorage.removeItem(STORAGE_KEYS.ORDERS);
+    localStorage.removeItem(STORAGE_KEYS.MENUS);
+    localStorage.removeItem(STORAGE_KEYS.EMPLOYEES);
+    localStorage.removeItem(STORAGE_KEYS.ANNOUNCEMENTS);
+  }
+
   // --- Session (Keep Local) ---
   setSession(role: 'USER' | 'ADMIN', userId?: string) {
     localStorage.setItem(STORAGE_KEYS.SESSION, role);
