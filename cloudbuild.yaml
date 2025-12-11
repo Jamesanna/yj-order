@@ -1,0 +1,14 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '--build-arg', 'VITE_GOOGLE_SCRIPT_URL=$_VITE_GOOGLE_SCRIPT_URL',
+      '-t', 'asia-east1-docker.pkg.dev/$PROJECT_ID/yj-order-repo/yj-order', 
+      '.'
+    ]
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'asia-east1-docker.pkg.dev/$PROJECT_ID/yj-order-repo/yj-order']
+images:
+  - 'asia-east1-docker.pkg.dev/$PROJECT_ID/yj-order-repo/yj-order'
+substitutions:
+  _VITE_GOOGLE_SCRIPT_URL: ''
