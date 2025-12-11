@@ -22,7 +22,9 @@ const STORAGE_KEYS = {
 const INITIAL_MENUS: MenuCategory[] = [];
 const INITIAL_EMPLOYEES: Employee[] = [];
 const INITIAL_ANNOUNCEMENTS: Announcement[] = [];
-const INITIAL_ADMINS: AdminAccount[] = [];
+const INITIAL_ADMINS: AdminAccount[] = [
+  { id: 'default_admin', name: '預設管理員', username: 'admin', password: 'password', isSuperAdmin: true }
+];
 const DEFAULT_FRONTEND_PWD = '123'; // Default fallback
 
 class StorageService {
@@ -323,12 +325,28 @@ class StorageService {
 
   async verifyAdmin(username: string, password: string): Promise<AdminAccount | null> {
     if (this.useCloud) {
-      // Query by username/pass
-      const q = query(collection(firestoreDb, 'admins'), where('username', '==', username), where('password', '==', password));
+      if (!firestoreDb) return null;
+
+      // Check if any admins exist at all
+      const adminsRef = collection(firestoreDb, 'admins');
+      const allAdminsSnapshot = await getDocs(adminsRef);
+
+      if (allAdminsSnapshot.empty) {
+        console.log('No admins found in DB, seeding default admins...');
+        // Seed default admins
+        for (const admin of INITIAL_ADMINS) {
+          await setDoc(doc(firestoreDb, 'admins', admin.id), { ...admin });
+        }
+      }
+
+      // Now check credential
+      const q = query(adminsRef, where('username', '==', username), where('password', '==', password));
       const snapshot = await getDocs(q);
+
       if (snapshot.empty) return null;
-      const doc = snapshot.docs[0];
-      return { id: doc.id, ...doc.data() } as AdminAccount;
+
+      const docSnap = snapshot.docs[0];
+      return { id: docSnap.id, ...docSnap.data() } as AdminAccount;
     }
     const admins = await this.getAdminAccounts();
     const admin = admins.find(a => a.username === username && a.password === password);
