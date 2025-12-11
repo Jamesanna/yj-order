@@ -16,6 +16,7 @@ export interface MenuConfig {
   shopName: string;
   date: string; // YYYY-MM-DD
   cutoffTime?: string; // HH:mm (e.g., "14:00")
+  options?: { id: string; label: string; price: number; }[];
 }
 
 // New Dynamic Structure
@@ -25,7 +26,7 @@ export interface MenuCategory {
   config: MenuConfig;
 }
 
-export type MenuImagesMap = Record<string, MenuConfig>; 
+export type MenuImagesMap = Record<string, MenuConfig>;
 
 export interface OrderItem {
   id: string;
@@ -61,7 +62,7 @@ export interface Announcement {
 export interface AdminAccount {
   id: string;
   username: string;
-  password: string; 
+  password: string;
   name: string;
   isSuperAdmin: boolean; // True for sysop
 }

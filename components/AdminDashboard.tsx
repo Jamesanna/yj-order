@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../services/storage';
+import { seedDatabase } from '../utils/seeder';
 import { Order, Employee, Announcement, MenuCategory, MenuConfig, AdminAccount } from '../types';
 import { ShoppingBag, Utensils, Users, Megaphone, Settings, LogOut, Trash2, ShieldAlert, Edit2, CheckCircle, XCircle, LayoutList, LayoutGrid, Calendar, Store, PlusCircle, UploadCloud, FileImage, User, BarChart3, ArrowUpDown, GripVertical, Save, Menu, X, PlayCircle, PauseCircle, ChevronLeft, ChevronRight, History, Zap, Filter, DollarSign, Shield, UserCog, Lock, ZoomIn, Circle, Database, RefreshCw, Link, Link2Off, Briefcase } from 'lucide-react';
 
@@ -199,11 +200,88 @@ const MenuManager = () => {
   const todayStr = new Date().toISOString().split('T')[0];
   useEffect(() => { db.getMenuCategories().then(setMenus); }, []);
   const handleSave = async () => {
-    if (!formData.shopName) { alert('請輸入店家名稱'); return; }
-    const config: MenuConfig = { imageUrl: formData.imageUrl, shopName: formData.shopName, date: formData.date, cutoffTime: formData.cutoffTime };
-    if (formData.imageFile) { const reader = new FileReader(); reader.onloadend = () => { config.imageUrl = reader.result as string; saveToDb(config); }; reader.readAsDataURL(formData.imageFile); } else { saveToDb(config); }
+    try {
+      if (!formData.shopName) { alert('請輸入店家名稱'); return; }
+
+      let finalImageUrl = formData.imageUrl;
+
+      if (formData.imageFile) {
+        try {
+          finalImageUrl = await compressImage(formData.imageFile);
+        } catch (e) {
+          alert('圖片處理失敗');
+          return;
+        }
+      }
+
+      if (finalImageUrl && finalImageUrl.length > 50000) {
+        alert('圖片檔案過大 (限制 50,000 字元)。請上傳更小的圖片或是使用外部連結。');
+        return;
+      }
+
+      const config: MenuConfig = { imageUrl: finalImageUrl, shopName: formData.shopName, date: formData.date, cutoffTime: formData.cutoffTime };
+      await saveToDb(config);
+    } catch (e: any) {
+      console.error(e);
+      alert('儲存失敗，請檢查網路連線或稍後再試。\n錯誤訊息: ' + e.message);
+    }
   };
-  const saveToDb = async (config: MenuConfig) => { if (editId) { await db.updateMenuCategory(editId, formData.categoryLabel, config); } else { await db.addMenuCategory(formData.categoryLabel, config); } setMenus(await db.getMenuCategories()); setIsEditing(false); resetForm(); };
+
+  const saveToDb = async (config: MenuConfig) => {
+    if (editId) {
+      await db.updateMenuCategory(editId, formData.categoryLabel, config);
+    } else {
+      await db.addMenuCategory(formData.categoryLabel, config);
+    }
+    setMenus(await db.getMenuCategories());
+    setIsEditing(false);
+    resetForm();
+  };
+
+  // --- Helper for Image Compression ---
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+
+          const MAX_WIDTH = 400; // Small enough for 50k char limit
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { reject(new Error('Canvas context not supported')); return; }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG with 0.5 quality
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+          resolve(dataUrl);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
   const handleDelete = async (id: string) => {
     const menuToDelete = menus.find(m => m.id === id);
     if (!menuToDelete) return;
@@ -363,11 +441,9 @@ const SystemManager = ({ settings, onBind, currentUser }: any) => {
       {activeTab === 'INFO' && (
         <div className="grid grid-cols-1 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Database className="text-indigo-600" /> 資料庫連線監控</h3><div className="flex flex-col md:flex-row gap-6"><div className="flex-1 space-y-4"><div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"><span className="font-bold text-slate-700">Google 帳號綁定</span>{settings.isGoogleBound ? (<div className="flex items-center gap-2">{settings.googleAccountType === 'WORKSPACE' ? (<span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">Google Workspace</span>) : (<span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">Personal</span>)}<span className="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full"><Link size={14} /> 已連結</span></div>) : (<span className="flex items-center gap-1 text-red-500 font-bold bg-red-50 px-3 py-1 rounded-full"><Link2Off size={14} /> 未連結</span>)}</div>{settings.isGoogleBound && (<div className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-100 shadow-sm"><span className="font-bold text-slate-700">綁定帳號</span><div className="flex items-center gap-2">{settings.googleAccountType === 'WORKSPACE' ? (<div className="bg-indigo-600 p-1 rounded-full text-white"><Briefcase size={14} /></div>) : (<div className="bg-white p-1 rounded-full shadow-sm"><GoogleIcon /></div>)}<span className="font-mono font-bold text-slate-800">{settings.googleAccountName}</span></div></div>)}<div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"><span className="font-bold text-slate-700">連線狀態</span>{dbStatus === 'IDLE' && <span className="text-slate-400 font-bold text-sm">尚未檢查</span>}{dbStatus === 'CHECKING' && <span className="text-blue-500 font-bold text-sm animate-pulse">檢查中...</span>}{dbStatus === 'SUCCESS' && <span className="text-emerald-600 font-bold text-sm flex items-center gap-1"><CheckCircle size={14} /> 連線正常</span>}{dbStatus === 'ERROR' && <span className="text-red-500 font-bold text-sm flex items-center gap-1"><XCircle size={14} /> 連線失敗</span>}</div>{lastDbCheck && (<div className="text-xs text-slate-400 text-right">上次檢查: {lastDbCheck.toLocaleTimeString()}</div>)}</div><div className="flex flex-col gap-2 justify-center border-l pl-6 border-slate-100"><button onClick={handleCheckConnection} disabled={dbStatus === 'CHECKING'} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:bg-indigo-300"><RefreshCw size={18} className={dbStatus === 'CHECKING' ? 'animate-spin' : ''} /> 測試連線</button>{!settings.isGoogleBound && (<button onClick={() => { setTimeout(() => { onBind('admin@yj-tech.com', 'WORKSPACE'); }, 1000); }} className="text-sm text-slate-500 underline hover:text-primary">前往綁定 Google 帳號</button>)}</div></div></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 className="font-bold text-lg mb-4 flex items-center gap-2"><ShieldAlert className="text-primary" /> 權限狀態</h3><div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100"><div><div className="font-bold text-slate-700">目前身分</div><div className="text-sm text-slate-500">{currentUser.name}</div></div><span className={`flex items-center gap-1 font-bold px-3 py-1 rounded-full ${currentUser.isSuperAdmin ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'}`}>{currentUser.isSuperAdmin ? '最高管理員' : '次管理員'}</span></div></div><div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Settings className="text-slate-600" /> 系統資訊</h3><div className="space-y-2 text-sm text-slate-600"><div className="flex justify-between border-b border-slate-100 pb-2"><span>版本</span><span className="font-mono font-bold">v1.2.0</span></div><div className="flex justify-between border-b border-slate-100 pb-2"><span>儲存模式</span><span className="text-emerald-600 font-bold">Hybrid (Local/Cloud)</span></div><div className="flex justify-between pt-2"><span>React 版本</span><span className="text-slate-400">18.x</span></div></div></div></div>
-        </div>
       )}
-    </div>
-  );
+        </div>
+      );
 };
 
-export default AdminDashboard;
+      export default AdminDashboard;
