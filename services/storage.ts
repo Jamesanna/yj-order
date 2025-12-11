@@ -452,7 +452,7 @@ class StorageService {
     }
     // Local storage clear
     localStorage.removeItem(STORAGE_KEYS.ORDERS);
-    localStorage.removeItem(STORAGE_KEYS.MENUS);
+    localStorage.removeItem(STORAGE_KEYS.MENU_CATEGORIES);
     localStorage.removeItem(STORAGE_KEYS.EMPLOYEES);
     localStorage.removeItem(STORAGE_KEYS.ANNOUNCEMENTS);
   }
