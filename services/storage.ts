@@ -25,7 +25,7 @@ const INITIAL_ANNOUNCEMENTS: Announcement[] = [];
 const INITIAL_ADMINS: AdminAccount[] = [
   { id: 'default_admin', name: '預設管理員', username: 'admin', password: 'password', isSuperAdmin: true }
 ];
-const DEFAULT_FRONTEND_PWD = '123'; // Default fallback
+const DEFAULT_FRONTEND_PWD = '24664941'; // Default fallback
 
 class StorageService {
   private get useCloud() {
@@ -403,12 +403,29 @@ class StorageService {
 
   // --- Frontend Password ---
   async getFrontendPassword(): Promise<string> {
-    // Keep local for simplicity unless requested
+    if (this.useCloud) {
+      if (!firestoreDb) return DEFAULT_FRONTEND_PWD;
+      try {
+        const docRef = doc(firestoreDb, 'settings', 'global');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().frontendPassword) {
+          return docSnap.data().frontendPassword;
+        }
+        return DEFAULT_FRONTEND_PWD;
+      } catch (e) {
+        console.error('Error fetching frontend password:', e);
+        return DEFAULT_FRONTEND_PWD;
+      }
+    }
     const pwd = localStorage.getItem(STORAGE_KEYS.FRONTEND_PASSWORD);
     return pwd || DEFAULT_FRONTEND_PWD;
   }
 
   async setFrontendPassword(password: string): Promise<void> {
+    if (this.useCloud) {
+      await setDoc(doc(firestoreDb, 'settings', 'global'), { frontendPassword: password }, { merge: true });
+      return;
+    }
     localStorage.setItem(STORAGE_KEYS.FRONTEND_PASSWORD, password);
   }
 
