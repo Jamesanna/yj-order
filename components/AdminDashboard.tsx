@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../services/storage';
 import { seedDatabase } from '../utils/seeder';
 import { Order, Employee, Announcement, MenuCategory, MenuConfig, AdminAccount } from '../types';
-import { ShoppingBag, Utensils, Users, Megaphone, Settings, LogOut, Trash2, ShieldAlert, Edit2, CheckCircle, XCircle, LayoutList, LayoutGrid, Calendar, Store, PlusCircle, UploadCloud, FileImage, User, BarChart3, ArrowUpDown, GripVertical, Save, Menu, X, PlayCircle, PauseCircle, ChevronLeft, ChevronRight, History, Zap, Filter, DollarSign, Shield, UserCog, Lock, ZoomIn, Circle, Database, RefreshCw, Link, Link2Off, Briefcase } from 'lucide-react';
+import { ShoppingBag, Utensils, Users, Megaphone, Settings, LogOut, Trash2, Edit2, CheckCircle, XCircle, LayoutList, LayoutGrid, Calendar, Store, PlusCircle, UploadCloud, FileImage, User, BarChart3, ArrowUpDown, GripVertical, Save, Menu, X, PlayCircle, PauseCircle, ChevronLeft, ChevronRight, History, Zap, Filter, DollarSign, Shield, UserCog, Lock, ZoomIn, Circle, Database, RefreshCw, Link, Link2Off, Briefcase } from 'lucide-react';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -441,6 +441,17 @@ const SystemManager = ({ settings, onBind, currentUser }: any) => {
       {activeTab === 'INFO' && (
         <div className="grid grid-cols-1 gap-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200"><h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Database className="text-indigo-600" /> 資料庫連線監控</h3><div className="flex flex-col md:flex-row gap-6"><div className="flex-1 space-y-4"><div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"><span className="font-bold text-slate-700">Google 帳號綁定</span>{settings.isGoogleBound ? (<div className="flex items-center gap-2">{settings.googleAccountType === 'WORKSPACE' ? (<span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-bold">Google Workspace</span>) : (<span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-bold">Personal</span>)}<span className="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-full"><Link size={14} /> 已連結</span></div>) : (<span className="flex items-center gap-1 text-red-500 font-bold bg-red-50 px-3 py-1 rounded-full"><Link2Off size={14} /> 未連結</span>)}</div>{settings.isGoogleBound && (<div className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-100 shadow-sm"><span className="font-bold text-slate-700">綁定帳號</span><div className="flex items-center gap-2">{settings.googleAccountType === 'WORKSPACE' ? (<div className="bg-indigo-600 p-1 rounded-full text-white"><Briefcase size={14} /></div>) : (<div className="bg-white p-1 rounded-full shadow-sm"><GoogleIcon /></div>)}<span className="font-mono font-bold text-slate-800">{settings.googleAccountName}</span></div></div>)}<div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"><span className="font-bold text-slate-700">連線狀態</span>{dbStatus === 'IDLE' && <span className="text-slate-400 font-bold text-sm">尚未檢查</span>}{dbStatus === 'CHECKING' && <span className="text-blue-500 font-bold text-sm animate-pulse">檢查中...</span>}{dbStatus === 'SUCCESS' && <span className="text-emerald-600 font-bold text-sm flex items-center gap-1"><CheckCircle size={14} /> 連線正常</span>}{dbStatus === 'ERROR' && <span className="text-red-500 font-bold text-sm flex items-center gap-1"><XCircle size={14} /> 連線失敗</span>}</div>{lastDbCheck && (<div className="text-xs text-slate-400 text-right">上次檢查: {lastDbCheck.toLocaleTimeString()}</div>)}</div><div className="flex flex-col gap-2 justify-center border-l pl-6 border-slate-100"><button onClick={handleCheckConnection} disabled={dbStatus === 'CHECKING'} className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center gap-2 disabled:bg-indigo-300"><RefreshCw size={18} className={dbStatus === 'CHECKING' ? 'animate-spin' : ''} /> 測試連線</button>{!settings.isGoogleBound && (<button onClick={() => { setTimeout(() => { onBind('admin@yj-tech.com', 'WORKSPACE'); }, 1000); }} className="text-sm text-slate-500 underline hover:text-primary">前往綁定 Google 帳號</button>)}</div></div></div>
+
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><Database className="text-indigo-600" /> 資料庫初始化</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-slate-600 mb-1 font-bold">初始化菜單資料</p>
+                <p className="text-xs text-slate-400">若資料庫為空，點擊此按鈕可寫入預設菜單範例。</p>
+              </div>
+              <button onClick={seedDatabase} className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-sm">初始化菜單資料</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

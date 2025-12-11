@@ -6,6 +6,9 @@ const INITIAL_MENUS: MenuCategory[] = [
         id: 'MENU_001',
         label: '美味便當',
         config: {
+            imageUrl: '',
+            shopName: '預設便當店',
+            date: new Date().toISOString().split('T')[0],
             options: [
                 { id: 'opt_1', label: '排骨飯', price: 100 },
                 { id: 'opt_2', label: '雞腿飯', price: 110 },
@@ -17,6 +20,9 @@ const INITIAL_MENUS: MenuCategory[] = [
         id: 'MENU_002',
         label: '清涼飲料',
         config: {
+            imageUrl: '',
+            shopName: '預設飲料店',
+            date: new Date().toISOString().split('T')[0],
             options: [
                 { id: 'drink_1', label: '紅茶', price: 20 },
                 { id: 'drink_2', label: '綠茶', price: 20 },
